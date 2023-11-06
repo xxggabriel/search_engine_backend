@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elasticsearch-config
+data:
+  elasticsearch.yml: |
+    xpack.security.enabled: true
+    # Adjustments for the Elasticsearch heap (e.g., 1g, 2g, etc.)
+    # Specifying the percentage of the HEAP here is an example and may not be recommended for your specific case.
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    # Configurations for node discovery in a Kubernetes environment
+      discovery.type: single-node
+    # other necessary configurations for Elasticsearch...
