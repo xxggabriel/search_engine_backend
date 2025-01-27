@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca de Jurisprudência</title>
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.0.0/dist/tailwind.min.css" rel="stylesheet"> -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-8">
+        <div class="flex justify-center mb-8">
+            <input type="text" id="searchInput" class="p-3 border border-gray-300 rounded-lg w-1/2"
+                placeholder="Digite o número do processo...">
+        </div>
+
+        <div id="results" class="grid grid-cols-1 gap-6">
+            <!-- Os resultados da busca serão renderizados aqui -->
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#searchInput').on('keypress', function (e) {
+                if (e.which === 13) {  // Verifica se a tecla pressionada foi Enter
+                    const query = $(this).val();
+
+                    // Chamada AJAX
+                    $.ajax({
+                        url: 'http://localhost:8000/search',
+                        method: 'POST',
+                        type: 'json',
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: JSON.stringify({ "query": query }), // Parâmetro da busca
+                        success: function (response) {
+                            $('#results').empty(); // Limpa os resultados anteriores
+                            console.log(response);
+                            // Verifica se há resultados
+                            if (response.hits && response.hits.hits.length > 0) {
+                                response.hits.hits.forEach(hit => {
+                                    const numeroProcesso = formatarNumeroProcesso(hit._source.numeroProcesso);
+                                    const statusDecisao = hit._source.status_decisao;
+                                    const ementas = hit._source.ementas['with_stemmer'];
+                                    const highlightText = hit.highlight['inteiro_teor.with_stemmer'][0];
+                                    const score = hit._score;
+
+                                    // Cria um card para cada resultado
+                                    const card = `
+                                    <div class="bg-white p-4 rounded-lg shadow-md">
+                                        <h3 class="text-xl font-semibold text-gray-800">Processo: ${numeroProcesso}</h3>
+                                        <p class="text-sm text-gray-500">Status: ${statusDecisao} / ${score}</p>
+                                        <p class="mt-4 text-gray-700">${ementas}</p>
+                                        <small class="mt-4 text-gray-700">${highlightText}</small>
+                                    </div>
+                                    `;
+                                    $('#results').append(card);
+                                });
+                            } else {
+                                // Caso não haja resultados
+                                $('#results').append('<p class="col-span-full text-center text-gray-500">Nenhum resultado encontrado.</p>');
+                            }
+                        },
+                        error: function () {
+                            $('#results').empty();
+                            $('#results').append('<p class="col-span-full text-center text-red-500">Erro na busca. Tente novamente mais tarde.</p>');
+                        }
+                    });
+                }
+            });
+        });
+
+        function formatarNumeroProcesso(numero) {
+            // Remove qualquer caractere não numérico (como espaços, pontos, etc.)
+            numero = numero.replace(/\D/g, '');
+
+            // Verifica se o número tem a quantidade correta de caracteres
+            if (numero.length !== 20) {
+                console.error("Número de processo inválido.");
+                return null;
+            }
+
+            // Aplica a máscara
+            const parte1 = numero.slice(0, 5);  // 5 primeiros números
+            const parte2 = numero.slice(5, 7);  // 2 dígitos do ano
+            const parte3 = numero.slice(7, 11); // 4 dígitos do código da unidade federativa
+            const parte4 = numero.slice(11, 12); // 1 dígito do tipo de tribunal
+            const parte5 = numero.slice(12, 14); // 2 dígitos da comarca
+            const parte6 = numero.slice(14); // Restante do número (até o final)
+
+            // Retorna o número formatado
+            return `${parte1}-${parte2}.${parte3}.${parte4}.${parte5}.${parte6}`;
+        }
+    </script>
+
+</body>
+
+</html>

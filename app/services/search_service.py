@@ -1,30 +1,24 @@
-from typing import List
+from math import ceil
+from typing import Dict, List
 from app.models.search_models import SearchQuery, SearchResult
 from app.utils.query_process import BaseProcessQuery
 from app.db_utils.translate_query import translate_to_dsl
-from app.utils.redis_utils import search_in_redis, store_in_redis
-
-
+# from app.utils.redis_utils import search_in_redis, store_in_redis
+from app.db_utils.elastic_search_client import get_elasticsearch
+# from app.app import app
 process = BaseProcessQuery()
 
 
-async def search(query: SearchQuery) -> List[SearchResult]:
-    # Normalized a proces de query
-    # In future could be possible to make more query process.
-    normalized_query, _, _ = process.process(query.query)
-    # Check in redis cache
-    cache_result = await search_in_redis(normalized_query)
+def search(text):
 
-    if cache_result:
-        # Transform the dictionaries to the SearchResult Schema.
-        return [SearchResult(**result_dict) for result_dict in cache_result]
+    terms_list, entities, concepts = process.process(text)
 
-    query_translated = translate_to_dsl(query)
-    # db_search() will be the function that consult the DB. Elastic cache is not implemented yet.
-    # results = await db_search(query_translated)
-    results = [SearchResult(title="Example Result", url="https://example.com", snippet="This is an example result.")]
-
-    # Store the result in Redis for further consults.
-    await store_in_redis(normalized_query, results)
-
-    return results
+    es = get_elasticsearch()
+    query = translate_to_dsl(terms_list)
+    
+    return es.search(
+        body=query,
+        # index="decisoes"
+        index="decisoes_with_ementas"
+    )
+   

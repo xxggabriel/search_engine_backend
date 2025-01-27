@@ -1,0 +1,10 @@
+aioredis
+elasticsearch-async
+elasticsearch-dsl 
+nltk
+spellchecker
+setuptools
+wheel
+spacy[apple]
+pydantic
+fastapi

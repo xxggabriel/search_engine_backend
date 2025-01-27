@@ -1,3 +1,4 @@
+from typing import Any, Dict
 from pydantic import BaseModel
 
 
@@ -6,6 +7,7 @@ class SearchQuery(BaseModel):
 
 
 class SearchResult(BaseModel):
-    title: str
-    url: str
-    snippet: str
+    # hits: Dict
+    # highlight: Dict
+    # aggregations: Dict
+    results: str
